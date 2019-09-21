@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: @project.artifactId@
+  profiles:
+    active: dev3
+  datasource:
+    driver-class-name: org.postgresql.Driver
+server:
+  port: 8899
+---
+spring:
+  profiles: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postdb
+    username:
+    password:
+---
+spring:
+  profiles: local2
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postdb2
+    username:
+    password:
+---
+spring:
+  profiles: dev
+  datasource:
+    url: jdbc:postgresql://pg-cn-v0h1ahnmh01.postgresql.rds.aliyuncs.com:5432/postdb
+    username: orderuser
+    password: Orderuser123
+---
+spring:
+  profiles: dev2
+  datasource:
+    url: jdbc:postgresql://pg-cn-v0h1ahnmh01.postgresql.rds.aliyuncs.com:5432/postdb2
+    username: orderuser
+    password: Orderuser123
+---
+spring:
+  profiles: dev3
+  datasource:
+    url: jdbc:postgresql://pg-cn-v0h1ahnmh01.postgresql.rds.aliyuncs.com:5432/postdb3
+    username: orderuser
+    password: Orderuser123
