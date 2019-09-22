@@ -18,11 +18,16 @@ public class MockController {
     }
 
     @RequestMapping("/insert/batch")
-    public void insertBatch(@RequestParam(required = false, defaultValue = "1000000") Integer count) {
+    public void insertBatch(@RequestParam(required = false, defaultValue = "100000") Integer count) {
         Flux.range(1, count)
                 .parallel()
                 .runOn(Schedulers.parallel())
                 .doOnComplete(() -> System.out.println("已完成"))
                 .subscribe(integer -> mockService.saveOrder());
+    }
+
+    @RequestMapping("/order/complete")
+    public void completeOrder(@RequestParam Long id) {
+        mockService.completeOrder(id);
     }
 }

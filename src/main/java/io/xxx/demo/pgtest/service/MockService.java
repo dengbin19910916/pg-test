@@ -1,12 +1,18 @@
 package io.xxx.demo.pgtest.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import io.xxx.demo.pgtest.data.HistoryOrderItemMapper;
+import io.xxx.demo.pgtest.data.HistoryOrderMapper;
 import io.xxx.demo.pgtest.data.OrderItemMapper;
-import io.xxx.demo.pgtest.data.TradeOrderMapper;
+import io.xxx.demo.pgtest.data.OrderMapper;
+import io.xxx.demo.pgtest.entity.HistoryOrder;
+import io.xxx.demo.pgtest.entity.HistoryOrderItem;
+import io.xxx.demo.pgtest.entity.Order;
 import io.xxx.demo.pgtest.entity.OrderItem;
-import io.xxx.demo.pgtest.entity.TradeOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,22 +24,53 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static java.util.stream.Collectors.toList;
+
 @Service
 public class MockService {
 
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-    private final TradeOrderMapper orderMapper;
+    private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
+    private final HistoryOrderMapper historyOrderMapper;
+    private final HistoryOrderItemMapper historyOrderItemMapper;
 
-    public MockService(TradeOrderMapper orderMapper, OrderItemMapper orderItemMapper) {
+    public MockService(OrderMapper orderMapper,
+                       OrderItemMapper orderItemMapper,
+                       HistoryOrderMapper historyOrderMapper,
+                       HistoryOrderItemMapper historyOrderItemMapper) {
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
+        this.historyOrderMapper = historyOrderMapper;
+        this.historyOrderItemMapper = historyOrderItemMapper;
+    }
+
+    @Transactional
+    public void completeOrder(Long id) {
+        Order order = orderMapper.selectById(id);
+        if (order != null) {
+            QueryWrapper<OrderItem> wrapper = new QueryWrapper<>();
+            wrapper.eq("order_id", order.getId());
+            List<OrderItem> orderItems = orderItemMapper.selectList(wrapper);
+
+            orderItemMapper.deleteBatchIds(orderItems.stream().map(OrderItem::getId).collect(toList()));
+            orderMapper.deleteById(id);
+
+            HistoryOrder historyOrder = new HistoryOrder();
+            BeanUtils.copyProperties(order, historyOrder);
+            historyOrderMapper.insert(historyOrder);
+            orderItems.forEach(orderItem -> {
+                HistoryOrderItem historyOrderItem = new HistoryOrderItem();
+                BeanUtils.copyProperties(orderItem, historyOrderItem);
+                historyOrderItemMapper.insert(historyOrderItem);
+            });
+        }
     }
 
     @Transactional
     public void saveOrder() {
-        TradeOrder order = new TradeOrder();
+        Order order = new Order();
         order.setId(IdWorker.getId());
         String orderChannel = channels[random.nextInt(channels.length)];
         order.setChannel(orderChannel);
@@ -63,6 +100,8 @@ public class MockService {
         LocalDateTime createdTime = LocalDateTime.now();
         order.setCreatedTime(createdTime);
         order.setUpdatedTime(createdTime);
+        order.setSyncTime(createdTime);
+        orderMapper.insert(order);
 
         boolean includesGift = false;
         int itemQuantity = itemQuantities[random.nextInt(itemQuantities.length)];
@@ -90,7 +129,7 @@ public class MockService {
         }
 
         order.setIncludesGift(includesGift);
-        orderMapper.insert(order);
+        orderMapper.updateById(order);
     }
 
     private String[] orderStatus = new String[]{
@@ -102,18 +141,21 @@ public class MockService {
             "2", "2", "2", "2", "2", "2", "2", "2", "2", "2",
             "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",
             "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",
-            "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
-            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "3", "3", "3", "3", "3", "3", "3", "3", "3", "3"
     };
+
+    /*
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+            "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",
+     */
 
     private int[] itemQuantities = new int[]{
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

@@ -2,7 +2,7 @@ spring:
   application:
     name: @project.artifactId@
   profiles:
-    active: dev3
+    active: local3
   datasource:
     driver-class-name: org.postgresql.Driver
 server:
@@ -19,6 +19,13 @@ spring:
   profiles: local2
   datasource:
     url: jdbc:postgresql://localhost:5432/postdb2
+    username:
+    password:
+---
+spring:
+  profiles: local3
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postdb3
     username:
     password:
 ---

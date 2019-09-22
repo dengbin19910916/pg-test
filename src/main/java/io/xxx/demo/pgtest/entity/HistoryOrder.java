@@ -6,8 +6,8 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("trade_order")
-public class TradeOrder {
+@TableName("history_order")
+public class HistoryOrder {
 
     private Long id;
     private String channel;
@@ -25,7 +25,6 @@ public class TradeOrder {
     private String receiverAreaCode;
     private String receiverAddress;
     private String receiverZip;
-    private String status;
     private Boolean includesGift;
     private LocalDateTime createdTime;
     private LocalDateTime updatedTime;
