@@ -2,7 +2,7 @@ spring:
   application:
     name: @project.artifactId@
   profiles:
-    active: dev3
+    active: local
   datasource:
     driver-class-name: org.postgresql.Driver
 server:
